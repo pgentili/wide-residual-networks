@@ -63,11 +63,37 @@ parser.add_argument('--gpu_id', default='0', type=str,
 
 
 def create_dataset(opt, train):
+    if opt.dataset == 'mini-imagenet':
+        if train:
+            transform = T.Compose([
+                T.Resize(80),
+                T.Pad(4, padding_mode='reflect'),
+                T.RandomHorizontalFlip(),
+                T.RandomCrop(80),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406],
+                            [0.229, 0.224, 0.225])
+            ])
+            return datasets.ImageFolder(os.path.join(opt.dataroot, 'train'),
+                                        transform=transform)
+        else:
+            transform = T.Compose([
+                T.Resize(80),
+                T.CenterCrop(80),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406],
+                            [0.229, 0.224, 0.225])
+            ])
+            return datasets.ImageFolder(os.path.join(opt.dataroot, 'val'),
+                                        transform=transform)
+
+    # If CIFAR
     transform = T.Compose([
         T.ToTensor(),
         T.Normalize(np.array([125.3, 123.0, 113.9]) / 255.0,
                     np.array([63.0, 62.1, 66.7]) / 255.0),
     ])
+
     if train:
         transform = T.Compose([
             T.Pad(4, padding_mode='reflect'),
@@ -82,7 +108,12 @@ def main():
     opt = parser.parse_args()
     print('parsed options:', vars(opt))
     epoch_step = json.loads(opt.epoch_step)
-    num_classes = 10 if opt.dataset == 'CIFAR10' else 100
+    if opt.dataset == 'mini-imagenet':
+        num_classes = 64
+    elif opt.dataset == 'CIFAR10':
+        num_classes = 10 
+    else:
+        num_classes = 100
 
     torch.manual_seed(opt.seed)
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id

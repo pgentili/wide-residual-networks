@@ -53,7 +53,7 @@ def resnet(depth, width, num_classes):
         g1 = group(g0, params, 'group1', mode, 2)
         g2 = group(g1, params, 'group2', mode, 2)
         o = F.relu(utils.batch_norm(g2, params, 'bn', mode))
-        o = F.avg_pool2d(o, 8, 1, 0)
+        o = F.avg_pool2d(o, o.size(3), 1, 0)
         o = o.view(o.size(0), -1)
         o = F.linear(o, params['fc.weight'], params['fc.bias'])
         return o
